@@ -121,14 +121,36 @@ def insert_relation_data(conn, df, column_name, table_name, relation_table_name,
         ON CONFLICT DO NOTHING;
     """
     
+    def safe_parse(value):
+        if pd.isna(value):
+            return []
+        
+        value_str = str(value)
+        
+        # If it looks like an AST node representation
+        if '<ast.Name' in value_str or '<ast.' in value_str:
+            cleaned = value_str.split('at')[0].strip()
+            return [cleaned]
+        
+        try:
+            # Try standard parsing
+            if ',' in value_str:
+                # Split by comma and clean
+                items = [item.strip() for item in value_str.split(',')]
+                return [item for item in items if item]
+            return [value_str.strip()]
+        except Exception as e:
+            logging.warning(f"Parsing failed for value '{value_str}': {e}")
+            return [value_str.strip()]
+    
     for _, row in df.iterrows():
-        if pd.notna(row[column_name]) and isinstance(row[column_name], str):
+        if pd.notna(row[column_name]):
             try:
                 cursor.execute("BEGIN;")
-                items = ast.literal_eval(row[column_name])
+                items = safe_parse(row[column_name])
                 
-                if isinstance(items, list):
-                    for item in items:
+                for item in items:
+                    if item:  # Skip empty strings
                         cursor.execute(items_query, (str(item),))
                         result = cursor.fetchone()
                         
@@ -148,7 +170,7 @@ def insert_relation_data(conn, df, column_name, table_name, relation_table_name,
 def main():
     try:
         logging.info("Loading CSV data...")
-        df = pd.read_csv('games_modificado.csv')
+        df = pd.read_csv('games_modificado_final.csv')
         
         logging.info("Connecting to database...")
         conn = connect_to_db()
@@ -158,7 +180,7 @@ def main():
         insert_game_metrics(conn, df)
         insert_platforms(conn, df)
 
-        # Define relations for many-to-many tables
+        # Define relations
         relations = [
             ('supported_languages', 'supported_languages', 'supported_languages_games', 'id_supported_language'),
             ('full_audio_languages', 'full_audio_languages', 'full_audio_languages_games', 'id_full_audio_language'),
