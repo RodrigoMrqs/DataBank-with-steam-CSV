@@ -1,0 +1,14 @@
+Requisitos para o funcionamento do insert_csv.ipynb:
+
+- Bibliotecas: (pip install ...)
+    . pandas
+    . psycopg2-binary
+
+- Ajustes no csv:
+    No csv existe duas colunas que estão juntas, você precisa colocar uma virgula entre as colunas "Discount" e "DLC count"
+
+- Ajustes no código:
+    Para permitir que o código insira os dados nas tabelas do seu DataSet é necessário ajustar algumas partes do código
+    
+    . DB_CONFIG -> Dentro das variaveis coloque, 'host' - se não tiver alterado o seu host então deixe "localhost", 'database' - o nome do seu dataset, 'user' - se não tiver alterado o seu user então deixe "postgres", 'password' - a senha do seu usuário do pgAdmin4
+    . caminho_csv -> Coloque o caminho para o seu csv
